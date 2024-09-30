@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasapalabra: Coagulopatías Congénitas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: lightyellow;
+        }
+        h1 {
+            text-align: center;
+            font-size: 35px;
+            font-weight: bold;
+            color: darkblue;
+        }
+        h2 {
+            text-align: center;
+            font-size: 15px;
+            font-weight: lighter;
+            color: darkblue;
+            font-style: italic;
+        }
+        h3 {
+            text-align: center;
+            font-size: 20px;
+            font-weight: lighter;
+            color: darkblue;
+            font-style: italic;
+        }
+        .game-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .rosco {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 20px;
+        }
+        .letter {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .correct { background-color: #4CAF50; color: white; }
+        .incorrect { background-color: #f44336; color: white; }
+        .current { background-color: #2196F3; color: white; }
+        #definition {
+            margin-bottom: 0px;
+            font-style: italic;
+            height: 20px;
+            padding: 30px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 5px;
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            margin-bottom: 10px;
+        }
+        #finalScore {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #results {
+            text-align: left;
+            margin-top: 20px;
+            display: none;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .result-correct {
+            background-color: #e8f5e9;
+        }
+        .result-incorrect {
+            background-color: #ffebee;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #results, #results * {
+                visibility: visible;
+            }
+            #results {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Pasapalabra Coagulopatías Congénitas</h1>
+        <h2>(versión prototipo-1)</h2>
+        <h3>Creado por Emilio Monte Boquet (sep-24)</h3>
+        <div id="timer">05:00</div>
+        <div class="rosco" id="rosco"></div>
+        <div id="definition"></div>
+        <input type="text" id="answer" placeholder="Tu respuesta">
+        <button onclick="checkAnswer()">Responder</button>
+        <button onclick="pasapalabra()">Pasapalabra</button>
+        <button onclick="newRosco()">Nuevo rosco</button>
+        <p id="score"></p>
+        <div id="finalScore"></div>
+        <button id="viewResults" style="display: none;" onclick="showResults()">Ver resultados</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const allWords = {
+            A: [
+                {word: "Antifibrinolíticos", definition: "Medicamentos que previenen la disolución de coágulos"},
+                {word: "Anemia", definition: "Disminución de glóbulos rojos o hemoglobina"},
+                {word: "Anticoagulante", definition: "Sustancia que impide la formación de coágulos"}
+            ],
+            B: [
+                {word: "Bleeding", definition: "Sangrado o pérdida de sangre."},
+                {word: "Biodisponibilidad", definition: "Porcentaje del fármaco que llega a la circulación sistémica."},
+                {word: "Bradicinina", definition: "Péptido que participa en la vasodilatación y el aumento de la permeabilidad vascular."}
+            ],
+            C: [
+                {word: "Coagulación", definition: "Proceso de formación de coágulos sanguíneos."},
+                {word: "Crioprecipitado", definition: "Producto sanguíneo rico en factores de coagulación."},
+                {word: "Concentrado", definition: "Producto que reemplaza factores de coagulación deficientes."}
+            ],
+            D: [
+                {word: "Déficit", definition: "Carencia o insuficiencia de un componente de la coagulación."},
+                {word: "Desmopresina", definition: "Medicamento que aumenta los niveles de factor VIII y del factor de von Willebrand."},
+                {word: "Disfibrinogenemia", definition: "Alteración estructural del fibrinógeno que impide su correcta función."}
+            ],
+            E: [
+                {word: "Endotelio", definition: "Capa celular que recubre el interior de los vasos sanguíneos."},
+                {word: "Eritrocito", definition: "Célula roja de la sangre encargada del transporte de oxígeno."},
+                {word: "Eritropoyetina", definition: "Hormona que estimula la producción de glóbulos rojos."}
+            ],
+            F: [
+                {word: "Fibrinógeno", definition: "Proteína clave en la coagulación que se convierte en fibrina."},
+                {word: "Factor VIII", definition: "Proteína esencial para la coagulación, deficiente en la hemofilia A."},
+                {word: "Fibrinolisis", definition: "Proceso de disolución de coágulos sanguíneos."}
+            ],
+            G: [
+                {word: "Glucoproteína", definition: "Proteínas con cadenas de carbohidratos involucradas en la coagulación."},
+                {word: "Genotipo", definition: "Conjunto de genes que determinan predisposiciones genéticas, como en las coagulopatías."},
+                {word: "Gammaglobulinas", definition: "Anticuerpos que pueden administrarse para prevenir infecciones en personas con coagulopatías."}
+            ],
+            H: [
+                {word: "Hemostasia", definition: "Proceso que detiene el sangrado mediante la formación de un coágulo."},
+                {word: "Hemofilia", definition: "Trastorno congénito de la coagulación que causa sangrados excesivos."},
+                {word: "Hematoma", definition: "Acumulación de sangre fuera de los vasos sanguíneos tras una lesión."}
+            ],
+            I: [
+                {word: "Inhibidor", definition: "Sustancia que bloquea la acción de factores de coagulación."},
+                {word: "Idiopático", definition: "De origen desconocido o sin causa identificable."},
+                {word: "Infusión", definition: "Administración de líquidos o medicamentos por vía intravenosa."}
+            ],
+            J: [
+                {word: "Jaqueca", definition: "Dolor de cabeza intenso que puede aparecer tras episodios de hemorragia cerebral."},
+                {word: "Jeringa", definition: "Instrumento para inyectar medicamentos, como los factores de coagulación."}
+            ],
+            L: [
+                {word: "Lípidos", definition: "Grasas presentes en sangre que pueden influir en la salud vascular."},
+                {word: "Leucocito", definition: "Célula blanca de la sangre encargada de la defensa inmunitaria."},
+                {word: "Linfedema", definition: "Acumulación de líquido linfático, que puede complicar algunos trastornos hematológicos."}
+            ],
+            M: [
+                {word: "Mutación", definition: "Alteración en el ADN que puede causar coagulopatías congénitas."},
+                {word: "Megacariocito", definition: "Célula de la médula ósea que produce plaquetas."},
+                {word: "Microangiopatía", definition: "Enfermedad de los pequeños vasos sanguíneos que puede afectar la coagulación."}
+            ],
+            N: [
+                {word: "Neutrófilo", definition: "Tipo de glóbulo blanco clave en la respuesta inmunitaria."},
+                {word: "Nadroparina", definition: "Anticoagulante de bajo peso molecular utilizado en algunas terapias."},
+                {word: "Necrosis", definition: "Muerte de tejidos, a veces asociada con problemas de circulación o coagulación."}
+            ],
+            O: [
+                {word: "Oclusión", definition: "Bloqueo de un vaso sanguíneo por un coágulo."},
+                {word: "Osteopenia", definition: "Disminución de la densidad ósea, presente en personas con trastornos de la coagulación."},
+                {word: "Osteonecrosis", definition: "Muerte del hueso por falta de suministro sanguíneo, relacionada con trombosis o coagulopatías."}
+            ],
+            P: [
+                {word: "Plaqueta", definition: "Célula sanguínea que participa en la coagulación."},
+                {word: "Protrombina", definition: "Proteína precursora de la trombina, esencial para la coagulación."},
+                {word: "Púrpura", definition: "Manchas en la piel causadas por pequeños sangrados debajo de la superficie."}
+            ],
+            R: [
+                {word: "Retracción", definition: "Contracción del coágulo sanguíneo después de su formación."},
+                {word: "Reemplazo", definition: "Terapia que consiste en administrar factores de coagulación faltantes."},
+                {word: "Recidiva", definition: "Reaparición de un síntoma o enfermedad después de un periodo de mejoría."}
+            ],
+            S: [
+                {word: "Sangrado", definition: "Pérdida de sangre causada por un defecto en la coagulación."},
+                {word: "Secuestro", definition: "Acumulación anormal de células sanguíneas en ciertos órganos, disminuyendo su disponibilidad en circulación."},
+                {word: "Shock", definition: "Estado crítico por pérdida masiva de sangre o fallos circulatorios."}
+            ],
+            T: [
+                {word: "Trombina", definition: "Enzima clave en la coagulación que convierte el fibrinógeno en fibrina."},
+                {word: "Trombosis", definition: "Formación de un coágulo sanguíneo dentro de un vaso que puede obstruir el flujo."},
+                {word: "Trombocitopenia", definition: "Disminución del número de plaquetas en sangre, lo que aumenta el riesgo de sangrado."}
+            ],
+            V: [
+                {word: "Vasoconstricción", definition: "Estrechamiento de los vasos sanguíneos que ayuda a reducir la pérdida de sangre."},
+                {word: "Vitamina K", definition: "Nutriente esencial para la síntesis de varios factores de coagulación."},
+                {word: "Vascular", definition: "Relativo a los vasos sanguíneos y su función en la circulación y coagulación."}
+            ],
+            Z: [
+                {word: "Zinc", definition: "Mineral importante para el funcionamiento de enzimas relacionadas con la coagulación."},
+                {word: "Zimógeno", definition: "Forma inactiva de una enzima o proenzima."},
+                {word: "Zoonosis", definition: "Enfermedades infecciosas que se transmiten de animales a humanos, relevantes en pacientes inmunocomprometidos con coagulopatías."}
+            ]
+        };
+
+        let words = [];
+        let currentIndex = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let remainingWords = [];
+        let answeredWords = [];
+        let userAnswers = {};
+        let timerInterval;
+        let timeLeft = 300; // 5 minutes in seconds
+
+        function selectRandomWords() {
+            words = [];
+            for (let letter in allWords) {
+                const randomIndex = Math.floor(Math.random() * allWords[letter].length);
+                words.push({letter: letter, ...allWords[letter][randomIndex]});
+            }
+        }
+
+        function initGame() {
+            selectRandomWords();
+            currentIndex = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            remainingWords = [...words];
+            answeredWords = new Array(words.length).fill(null);
+            userAnswers = {};
+            timeLeft = 300;
+
+            const rosco = document.getElementById('rosco');
+            rosco.innerHTML = '';
+            words.forEach((word, index) => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = 'letter';
+                letterDiv.textContent = word.letter;
+                const angle = (index / words.length) * 2 * Math.PI;
+                const radius = 180;
+                const x = Math.cos(angle) * radius + 200;
+                const y = Math.sin(angle) * radius + 200;
+                letterDiv.style.left = `${x}px`;
+                letterDiv.style.top = `${y}px`;
+                rosco.appendChild(letterDiv);
+            });
+
+            document.getElementById('answer').disabled = false;
+            document.querySelector('button[onclick="checkAnswer()"]').disabled = false;
+            document.querySelector('button[onclick="pasapalabra()"]').disabled = false;
+            document.getElementById('finalScore').textContent = '';
+            document.getElementById('viewResults').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+
+            updateGame();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateGame() {
+            const letters = document.querySelectorAll('.letter');
+            letters.forEach((letter, index) => {
+                letter.classList.remove('current');
+                if (words[index] === remainingWords[currentIndex]) {
+                    letter.classList.add('current');
+                }
+            });
+            if (remainingWords.length > 0) {
+                document.getElementById('definition').textContent = remainingWords[currentIndex].definition;
+            } else {
+                document.getElementById('definition').textContent = "¡Has completado todas las palabras!";
+            }
+            document.getElementById('answer').value = '';
+            document.getElementById('score').textContent = `Correctas: ${correctAnswers} | Incorrectas: ${incorrectAnswers}`;
+        }
+
+        function checkAnswer() {
+            if (remainingWords.length === 0) {
+                endGame();
+                return;
+            }
+
+            const userAnswer = document.getElementById('answer').value.toLowerCase();
+            const correctAnswer = remainingWords[currentIndex].word.toLowerCase();
+            const letters = document.querySelectorAll('.letter');
+            const currentLetter = words.findIndex(word => word.letter === remainingWords[currentIndex].letter);
+
+            userAnswers[remainingWords[currentIndex].letter] = userAnswer;
+
+            if (userAnswer === correctAnswer) {
+                letters[currentLetter].classList.remove('current');
+                letters[currentLetter].classList.add('correct');
+                correctAnswers++;
+                answeredWords[currentLetter] = true;
+            } else {
+                letters[currentLetter].classList.remove('current');
+                letters[currentLetter].classList.add('incorrect');
+                incorrectAnswers++;
+                answeredWords[currentLetter] = false;
+            }
+
+            remainingWords.splice(currentIndex, 1);
+
+            if (remainingWords.length === 0) {
+                endGame();
+            } else {
+                if (currentIndex >= remainingWords.length) {
+                    currentIndex = 0;
+                }
+                updateGame();
+            }
+        }
+
+        function pasapalabra() {
+            if (remainingWords.length > 1) {
+                currentIndex = (currentIndex + 1) % remainingWords.length;
+                updateGame();
+            } else if (remainingWords.length === 1) {
+                alert("Solo queda una palabra. Debes responderla.");
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            const letters = document.querySelectorAll('.letter');
+            letters.forEach((letter, index) => {
+                if (answeredWords[index] === null) {
+                    letter.classList.remove('current');
+                    letter.classList.add('incorrect');
+                    incorrectAnswers++;
+                    userAnswers[words[index].letter] = "";
+                }
+            });
+
+            const finalScore = document.getElementById('finalScore');
+            finalScore.textContent = `Juego terminado! Puntuación final: ${correctAnswers} correctas, ${incorrectAnswers} incorrectas`;
+            document.getElementById('answer').disabled = true;
+            document.querySelector('button[onclick="checkAnswer()"]').disabled = true;
+            document.querySelector('button[onclick="pasapalabra()"]').disabled = true;
+            document.getElementById('viewResults').style.display = 'inline-block';
+        }
+
+        function newRosco() {
+            initGame();
+        }
+
+        function showResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Resultados del Pasapalabra: Coagulopatías Congénitas</h2>';
+            resultsDiv.style.display = 'block';
+
+            words.forEach(word => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                const userAnswer = userAnswers[word.letter] || "No contestada";
+                const isCorrect = userAnswer.toLowerCase() === word.word.toLowerCase();
+                
+                resultItem.classList.add(isCorrect ? 'result-correct' : 'result-incorrect');
+                
+                let resultHTML = `<strong>${word.letter}: ${word.definition}</strong><br>`;
+                resultHTML += `Tu respuesta: ${userAnswer}<br>`;
+                
+                if (!isCorrect) {
+                    resultHTML += `Respuesta correcta: ${word.word}<br>`;
+                }
+                
+                resultItem.innerHTML = resultHTML;
+                resultsDiv.appendChild(resultItem);
+            });
+
+            // Añadir botón de impresión
+            const printButton = document.createElement('button');
+            printButton.textContent = 'Imprimir resultados';
+            printButton.onclick = printResults;
+            resultsDiv.appendChild(printButton);
+        }
+
+        function printResults() {
+            window.print();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
